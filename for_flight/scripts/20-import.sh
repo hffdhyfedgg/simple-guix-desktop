@@ -10,7 +10,10 @@ say "сборка $NAR_BASE из частей..."
 cat "$NARS"/$NAR_BASE.part-* > "$WORK/$NAR_BASE"
 
 say "проверка sha256..."
-(cd "$WORK" && sha256sum -c "$NARS/$NAR_BASE.sha256") || die "sha256 не сошёлся"
+expected=$(cut -d ' ' -f 1 "$NARS/$NAR_BASE.sha256")
+actual=$(sha256sum "$WORK/$NAR_BASE" | cut -d ' ' -f 1)
+[ -n "$expected" ] || die "sha256-файл пуст или повреждён"
+[ "$actual" = "$expected" ] || die "sha256 не сошёлся: ожидалось $expected, получено $actual"
 
 if ls "$NARS"/*.par2 >/dev/null 2>&1; then
   say "проверка par2..."
