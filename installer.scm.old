@@ -1,0 +1,51 @@
+;; installer.scm
+(use-modules (gnu)
+             (gnu system install)
+             (gnu packages disk)
+             (guix packages)
+             (guix gexp)
+             (guix build-system copy))
+
+(use-package-modules
+ linux package-management file-systems admin networking vim tmux backup compression)
+
+;;; ── Пакет с офлайн-данными ──────────────────────────────
+(define flight-data-installer
+  (package
+    (name "flight-data-installer")
+    (version "1.0")
+    (source (local-file "for_flight" #:recursive? #t))
+    (build-system copy-build-system)
+    (arguments
+     (list #:install-plan ; Это всё будет расположено в /gnu/store
+           #~'(("channels.scm"            "share/guix-offline/channels.scm")
+              ("signing-key-nonguix.pub" "share/guix-offline/signing-key-nonguix.pub")
+              ("nars"                    "share/guix-offline/nars")
+              ("channels"                   "share/guix-offline/channels")     ; ← снимки guix/nonguix
+              ("config"                  "share/guix-offline/config")    ; ← configuration.scm и dotfiles
+              ("scripts"                 "share/guix-offline/scripts")
+              ("scripts/flight"          "bin/flight"))                  ; ← диспетчер в PATH
+      )
+    )
+    (synopsis "Offline data for Guix installer")
+    (home-page "https://example.com")
+    (description "Embeds channels, keys and NARs into the installer ISO.")
+    (license #f)))
+
+;;; ── Система ─────────────────────────────────────────────
+(operating-system
+  (inherit installation-os)
+
+  (host-name "guix-installer")
+  (timezone "Europe/Moscow")
+  (locale "ru_RU.utf8")
+  (keyboard-layout (keyboard-layout "us,ru"
+                                    #:options '("grp:alt_shift_toggle")))
+
+  (packages
+   (append
+    (list parted gptfdisk dosfstools e2fsprogs btrfs-progs
+          util-linux iproute vim tmux par2cmdline
+          flight-data-installer efibootmgr xz)          ; ← наш пакет
+    %base-packages)))
+

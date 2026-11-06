@@ -1,0 +1,37 @@
+#!/bin/sh
+set -eu
+FLIGHT_ROOT=$(ls -d /gnu/store/*-flight-data-installer-*/share/guix-offline 2>/dev/null | sort | tail -n1)
+[ -n "$FLIGHT_ROOT" ] || { echo "flight-data-installer не найден в /gnu/store" >&2; exit 1; }
+S="$FLIGHT_ROOT/scripts"
+usage() {
+  cat <<'EOF'
+flight — полётные скрипты установки Guix (offline)
+
+  check-disks      карты дисков, метки guix-root, ESP, Windows, efibootmgr
+  cow-store        herd start cow-store /mnt (после монтирования целевого диска!)
+  import           собрать nar из частей, sha256/par2, guix archive --import
+  channels         сгенерировать /etc/guix/channels.scm (локальные repos)
+  pull             guix pull --no-substitutes из локальных каналов
+  check-offline    всё ли замыкание доступно БЕЗ сети
+  install          guix system init + перенос каналов/repos на целевую систему
+  swapfile [SIZE]  создать /mnt/swapfile (по умолчанию 8G)
+  windows-boot     поставить Guix перед Windows Boot Manager в UEFI
+
+Порядок: check-disks -> mount -> cow-store -> import -> channels -> pull
+         -> check-offline -> install -> swapfile -> windows-boot
+EOF
+}
+cmd="${1:-}"; [ -n "$cmd" ] || { usage; exit 1; }; shift || true
+case "$cmd" in
+  check-disks)   exec sh "$S/40-check-disks.sh" "$@" ;;
+  cow-store)     exec sh "$S/10-cow-store.sh" "$@" ;;
+  import)        exec sh "$S/20-import.sh" "$@" ;;
+  channels)      exec sh "$S/30-channels.sh" "$@" ;;
+  pull)          exec sh "$S/31-pull.sh" "$@" ;;
+  check-offline) exec sh "$S/32-check-offline.sh" "$@" ;;
+  install)       exec sh "$S/50-install.sh" "$@" ;;
+  swapfile)      exec sh "$S/60-swapfile.sh" "$@" ;;
+  windows-boot)  exec sh "$S/70-windows-boot.sh" "$@" ;;
+  help|-h|--help) usage ;;
+  *) usage; exit 1 ;;
+esac
