@@ -79,6 +79,6 @@
       config => (guix-configuration
                  (inherit config)
                  ;; 1. Пакет guix, собранный с учётом my-channels:
-                 (guix (guix-for-channels my-channels))
+                 ;; (guix (guix-for-channels my-channels))
                  ;; 2. Файл /etc/guix/channels.scm с теми же каналами:
                  (channels my-channels))))))
